@@ -119,3 +119,32 @@ ubyte* shiftRows(ubyte* input)
     ubyte* result = permuteNumbers(input, perm, rowLength);
     return result;
 }
+
+ubyte* mixColumns(ubyte* input)
+{
+    const int length = 16;
+    const int sideLen = 4;
+    ubyte* result = malloc(sizeof(ubyte) * length);
+    ubyte m[] = {
+        1, 0, 1, 1,
+        1, 0, 0, 0,
+        0, 1, 1, 0,
+        1, 0, 1, 0
+    };
+    memset(result, 0, sizeof(ubyte) * length);
+
+    ubyte* rTemp = result;
+    for(int i = 0; i < sideLen; ++i)
+    {
+        for(int j = 0; j < sideLen; ++j)
+        {
+            for(int k = 0; k < sideLen; ++k)
+            {
+                *rTemp ^=  m[i * 4 + k] * input[j * 4 + k]; 
+            }
+            rTemp++;
+        }
+    }
+
+    return result;
+}
