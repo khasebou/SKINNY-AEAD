@@ -57,9 +57,13 @@ ubyte* AddRoundTweakey(ubyte* input, ubyte* tweakey);
  * (0,....,  length - 1)
  */
 ubyte* permuteNumbers(ubyte* input, int *perm, int length);
-
+/**  derives next tweakey from current one
+ */
 ubyte* createNextTweakKeyRow(ubyte* key);
 
+ubyte* shiftRows(ubyte* input);
+
+ubyte* mixColumns(ubyte* input);
 /**
  * SKINNY-128-384 block cipher encryption.
  * Under 48-byte tweakey at k, encrypt 16-byte plaintext at p and store the 16-byte output at c.

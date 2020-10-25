@@ -110,3 +110,12 @@ ubyte* createNextTweakKeyRow(ubyte* keyRow)
 
     return result;
 }
+
+ubyte* shiftRows(ubyte* input)
+{
+    int rowLength = 16;
+    const int perm[] = {0, 1, 2, 3, 7, 4, 5, 6, 10, 11, 
+        8, 9, 13, 14, 15, 12};
+    ubyte* result = permuteNumbers(input, perm, rowLength);
+    return result;
+}
