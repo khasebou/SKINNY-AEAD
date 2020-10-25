@@ -49,6 +49,16 @@ ubyte* AddConstants(ubyte *x, int roundNumber);
 RoundConstants generateLFSRConstants(int roundNumber);
 
 ubyte* AddRoundTweakey(ubyte* input, ubyte* tweakey);
+/**
+ * @param input Input array to permute elements
+ * @param perm array of indicies for permutation
+ * @param length length of input and perm array
+ * this func assumes element numbering as following 
+ * (0,....,  length - 1)
+ */
+ubyte* permuteNumbers(ubyte* input, int *perm, int length);
+
+ubyte* createNextTweakKeyRow(ubyte* key);
 
 /**
  * SKINNY-128-384 block cipher encryption.

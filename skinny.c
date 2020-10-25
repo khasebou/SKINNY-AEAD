@@ -13,7 +13,7 @@ void skinny(unsigned char *c, const unsigned char *p, const unsigned char *k) {
 
 ubyte* subCells(ubyte *x);
 {
-    const int length = 8;
+    const int length = 16;
     ubyte* result = malloc(sizeof(ubyte) * length);
     for(int i = 0; i < length; ++i)
     {
@@ -62,7 +62,7 @@ RoundConstants generateLFSRConstants(int roundNumber)
 
 ubyte* AddConstants(ubyte *x, int roundNumber)
 {
-    const int length = 8;
+    const int length = 16;
 
     RoundConstants consts = generateLFSRConstants(roundNumber);
     ubyte* result = malloc(sizeof(ubyte) * length);
@@ -85,5 +85,28 @@ ubyte* AddRoundTweakey(ubyte* input, ubyte* tweakey)
         result[i] = input[i] ^ tweakey[i] ^ 
             tweakey[i + 16] ^ tweakey[i + 32];
     }
+    return result;
+}
+
+ubyte* permuteNumbers(ubyte* input, int *perm, int length)
+{
+    ubyte* result = malloc(sizeof(ubyte) * length);
+
+    for(int i = 0; i < length; ++i)
+    {
+        result[i] = input[perm[i]];
+    }
+
+    return result;
+}
+
+ubyte* createNextTweakKeyRow(ubyte* keyRow)
+{
+    int rowLength = 8;
+    const int perm[] = {0, 6, 7, 5, 4, 3, 2, 1};
+    
+    ubyte* result = permuteNumbers(keyRow, perm, rowLength);
+    result[0] = keyRow[0] ^ keyRow[6];
+
     return result;
 }
