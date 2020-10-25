@@ -59,7 +59,9 @@ ubyte* AddRoundTweakey(ubyte* input, ubyte* tweakey);
 ubyte* permuteNumbers(ubyte* input, int *perm, int length);
 /**  derives next tweakey from current one
  */
-ubyte* createNextTweakKeyRow(ubyte* key);
+//ubyte* createNextTweakKeyRow(ubyte* key);
+
+ubyte* computeNextTweakey(ubyte *key);
 
 ubyte* shiftRows(ubyte* input);
 

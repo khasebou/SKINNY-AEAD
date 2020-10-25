@@ -8,7 +8,53 @@
  * Under 48-byte tweakey at k, encrypt 16-byte plaintext at p and store the 16-byte output at c.
  */
 void skinny(unsigned char *c, const unsigned char *p, const unsigned char *k) {
+    const int rounds = 56;
+    for(int i = 0; i < rounds; ++i)
+    {
+        ubyte* subCellOut = subCells(p);
+        ubyte* addConstsOut = AddConstants(subCellOut, i);
+        ubyte* addRoundTwekOut = AddRoundTweakey(addConstsOut, k);
+        ubyte* shiftRowOut = shiftRows(addRoundTwekOut);
+        ubyte* mixColumnsOut = mixColumns(shiftRowOut);
 
+        ubyte* nextTweakeyOut = computeNextTweakey(k);
+
+        memcpy(p, mixColumnsOut, sizeof(ubyte) * 16);
+        memcpy(k, nextTweakeyOut, sizeof(ubyte) * 48);
+
+        free(subCellOut);
+        free(addConstsOut);
+        free(addRoundTwekOut);
+        free(shiftRowOut);
+        free(mixColumnsOut);
+        free(nextTweakeyOut);
+    }
+    memcpy(c, p, sizeof(ubyte) * 16);
+}
+
+ubyte* computeNextTweakey(ubyte *p)
+{
+    const int perm[] = {9, 15, 8, 13, 10, 14, 12, 11, 0, 
+            1, 2, 3, 4, 5, 6, 7};
+    ubyte* result = malloc(sizeof(ubyte) * 48);
+
+    for(int j = 0; j < 3; ++i)
+    {
+        ubyte* permOut = permuteNumbers(p + i * 16, perm, 16);
+        memcpy(result + i * 16, permOut, sizeof(ubyte) * 16);
+        free(permOut);
+    }
+
+    const int bitPerm[] = {0, 7, 6, 5, 4, 3, 2, 1};
+
+    for(int i = 0; i < 16 * 2; ++i)
+    {
+        ubyte msb = (result[i]>>6 & 1) ^ (result[i] & 1);
+        result[i] = permuteBits(result[i], bitPerm);
+        result[i] = result | msb << 7;
+    }
+
+    return result;
 }
 
 ubyte* subCells(ubyte *x);
@@ -25,7 +71,7 @@ ubyte* subCells(ubyte *x);
 ubyte subCell(ubyte x)
 {
     const int permutationOne[] = {2, 1, 7, 6, 4, 0, 3, 5};
-    const int permutationTwo[] = {7, 6, 5, 4, 3, 2, 1, 0};
+    const int permutationTwo[] = {7, 6, 5, 4, 3, 1, 2, 0};
     for(int i = 0; i < 3; ++i)
     {
         x = permuteBits(x, permutationOne);
@@ -100,16 +146,16 @@ ubyte* permuteNumbers(ubyte* input, int *perm, int length)
     return result;
 }
 
-ubyte* createNextTweakKeyRow(ubyte* keyRow)
-{
-    int rowLength = 8;
-    const int perm[] = {0, 6, 7, 5, 4, 3, 2, 1};
+// ubyte* createNextTweakKeyRow(ubyte* keyRow)
+// {
+//     int rowLength = 8;
+//     const int perm[] = {0, 6, 7, 5, 4, 3, 2, 1};
     
-    ubyte* result = permuteNumbers(keyRow, perm, rowLength);
-    result[0] = keyRow[0] ^ keyRow[6];
+//     ubyte* result = permuteNumbers(keyRow, perm, rowLength);
+//     result[0] = keyRow[0] ^ keyRow[6];
 
-    return result;
-}
+//     return result;
+// }
 
 ubyte* shiftRows(ubyte* input)
 {
