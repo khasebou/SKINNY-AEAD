@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include "skinny.h"
 
 const ubyte sboxLookupTable[256] = {
@@ -38,18 +39,25 @@ const ubyte roundConstantsLookupTable[] = {
  */
 void skinny(unsigned char *c, const unsigned char *p, const unsigned char *k) {
     const int rounds = 56;
+    
+    ubyte* input = (ubyte*) malloc(sizeof(ubyte) * 16);
+    ubyte* key = (ubyte*) malloc(sizeof(ubyte) * 48);
+
+    memcpy(input, p, sizeof(ubyte) * 16);
+    memcpy(key, k, sizeof(ubyte) * 48);
+
     for(int i = 0; i < rounds; ++i)
     {
-        ubyte* subCellOut = subCells(p);
+        ubyte* subCellOut = subCells(input);
         ubyte* addConstsOut = AddConstants(subCellOut, i);
         ubyte* addRoundTwekOut = AddRoundTweakey(addConstsOut, k);
         ubyte* shiftRowOut = shiftRows(addRoundTwekOut);
         ubyte* mixColumnsOut = mixColumns(shiftRowOut);
 
-        ubyte* nextTweakeyOut = computeNextTweakey(k);
+        ubyte* nextTweakeyOut = computeNextTweakey(key);
 
-        memcpy(p, mixColumnsOut, sizeof(ubyte) * 16);
-        memcpy(k, nextTweakeyOut, sizeof(ubyte) * 48);
+        memcpy(input, mixColumnsOut, sizeof(ubyte) * 16);
+        memcpy(key, nextTweakeyOut, sizeof(ubyte) * 48);
 
         free(subCellOut);
         free(addConstsOut);
@@ -58,12 +66,12 @@ void skinny(unsigned char *c, const unsigned char *p, const unsigned char *k) {
         free(mixColumnsOut);
         free(nextTweakeyOut);
     }
-    memcpy(c, p, sizeof(ubyte) * 16);
+    memcpy(c, input, sizeof(ubyte) * 16);
 }
 
 ubyte* computeNextTweakey(ubyte *p)
 {
-    const int perm[] = {9, 15, 8, 13, 10, 14, 12, 11, 0, 
+    int perm[] = {9, 15, 8, 13, 10, 14, 12, 11, 0, 
             1, 2, 3, 4, 5, 6, 7};
     ubyte* result = malloc(sizeof(ubyte) * 48);
 
@@ -74,7 +82,7 @@ ubyte* computeNextTweakey(ubyte *p)
         free(permOut);
     }
 
-    const int bitPerm[] = {0, 7, 6, 5, 4, 3, 2, 1};
+    int bitPerm[] = {0, 7, 6, 5, 4, 3, 2, 1};
 
     for(int i = 0; i < 16 * 2; ++i)
     {
@@ -92,15 +100,15 @@ ubyte* subCells(ubyte *x)
     ubyte* result = malloc(sizeof(ubyte) * length);
     for(int i = 0; i < length; ++i)
     {
-        result = subCell(x[i]);
+        result[i] = subCell(x[i]);
     }
     return result;
 }
 
 ubyte subCell(ubyte x)
 {
-    const int permutationOne[] = {2, 1, 7, 6, 4, 0, 3, 5};
-    const int permutationTwo[] = {7, 6, 5, 4, 3, 1, 2, 0};
+    int permutationOne[] = {2, 1, 7, 6, 4, 0, 3, 5};
+    int permutationTwo[] = {7, 6, 5, 4, 3, 1, 2, 0};
     for(int i = 0; i < 3; ++i)
     {
         x = sboxLookupTable[x];
@@ -150,7 +158,7 @@ ubyte* AddConstants(ubyte *x, int roundNumber)
     return result;
 }
 
-ubyte* AddRoundTweakey(ubyte* input, ubyte* tweakey)
+ubyte* AddRoundTweakey(ubyte* input, const ubyte* tweakey)
 {
     const int length = 16;
     ubyte* result = malloc(sizeof(ubyte) * length);
@@ -175,21 +183,10 @@ ubyte* permuteNumbers(ubyte* input, int *perm, int length)
     return result;
 }
 
-// ubyte* createNextTweakKeyRow(ubyte* keyRow)
-// {
-//     int rowLength = 8;
-//     const int perm[] = {0, 6, 7, 5, 4, 3, 2, 1};
-    
-//     ubyte* result = permuteNumbers(keyRow, perm, rowLength);
-//     result[0] = keyRow[0] ^ keyRow[6];
-
-//     return result;
-// }
-
 ubyte* shiftRows(ubyte* input)
 {
     int rowLength = 16;
-    const int perm[] = {0, 1, 2, 3, 7, 4, 5, 6, 10, 11, 
+    int perm[] = {0, 1, 2, 3, 7, 4, 5, 6, 10, 11, 
         8, 9, 13, 14, 15, 12};
     ubyte* result = permuteNumbers(input, perm, rowLength);
     return result;

@@ -20,7 +20,7 @@ typedef struct skinny
 ubyte* AddConstants(ubyte *x, int roundNumber);
 RoundConstants generateLFSRConstants(int roundNumber);
 
-ubyte* AddRoundTweakey(ubyte* input, ubyte* tweakey);
+ubyte* AddRoundTweakey(ubyte* input, const ubyte* tweakey);
 /**
  * @param input Input array to permute elements
  * @param perm array of indicies for permutation
