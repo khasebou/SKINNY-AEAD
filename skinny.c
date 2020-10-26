@@ -39,7 +39,7 @@ const ubyte roundConstantsLookupTable[] = {
  */
 void skinny(unsigned char *c, const unsigned char *p, const unsigned char *k) {
     const int rounds = 56;
-    
+
     ubyte* input = (ubyte*) malloc(sizeof(ubyte) * 16);
     ubyte* key = (ubyte*) malloc(sizeof(ubyte) * 48);
 
@@ -88,7 +88,7 @@ ubyte* computeNextTweakey(ubyte *p)
     {
         ubyte msb = (result[i]>>6 & 1) ^ (result[i] & 1);
         result[i] = permuteBits(result[i], bitPerm);
-        result[i] = result[i] | msb << 7;
+        result[i] = result[i] & msb << 7;
     }
 
     return result;
@@ -107,16 +107,7 @@ ubyte* subCells(ubyte *x)
 
 ubyte subCell(ubyte x)
 {
-    int permutationOne[] = {2, 1, 7, 6, 4, 0, 3, 5};
-    int permutationTwo[] = {7, 6, 5, 4, 3, 1, 2, 0};
-    for(int i = 0; i < 3; ++i)
-    {
-        x = sboxLookupTable[x];
-        x = permuteBits(x, permutationOne);
-    }
-    x = sboxLookupTable[x];
-    x = permuteBits(x, permutationTwo);
-    return x;
+    return sboxLookupTable[x];
 }
 
 ubyte permuteBits(ubyte x, int *perm)
@@ -135,10 +126,9 @@ RoundConstants generateLFSRConstants(int roundNumber)
     ubyte state = roundConstantsLookupTable[roundNumber];
     RoundConstants result;
     
-    result.c0 = 0x2;
-    result.c1 = (state & 0b1110) >> 1;
-    result.c2 = (state & 0b100000) | (state & 0b10000);
-    result.c2 = result.c2 >> 4;
+    result.c2 = 0x2;
+    result.c0 = state & 0xF;
+    result.c1 = (state >> 4) & 0x3;
 
     return result;
 }
