@@ -205,7 +205,7 @@ ubyte* mixColumns(ubyte* input)
         {
             for(int k = 0; k < sideLen; ++k)
             {
-                *rTemp ^=  m[i * 4 + k] * input[j * 4 + k]; 
+                *rTemp ^=  m[i * 4 + k] * input[k * 4 + j]; 
             }
             rTemp++;
         }
