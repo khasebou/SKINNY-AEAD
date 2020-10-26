@@ -156,7 +156,7 @@ ubyte* AddRoundTweakey(ubyte* input, const ubyte* tweakey)
     const int length = 16;
     ubyte* result = malloc(sizeof(ubyte) * length);
 
-    for(int i = 0; i < length; ++i)
+    for(int i = 0; i < length / 2; ++i)
     {
         result[i] = input[i] ^ tweakey[i] ^ 
             tweakey[i + 16] ^ tweakey[i + 32];
