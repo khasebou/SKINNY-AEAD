@@ -66,7 +66,10 @@ void skinny(unsigned char *c, const unsigned char *p, const unsigned char *k) {
         free(mixColumnsOut);
         free(nextTweakeyOut);
     }
+
     memcpy(c, input, sizeof(ubyte) * 16);
+    free(input);
+    free(key);
 }
 
 ubyte* computeNextTweakey(ubyte *p)
