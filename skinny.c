@@ -86,18 +86,29 @@ ubyte* computeNextTweakey(ubyte *p)
         free(permOut);
     }
 
-    int bitPerm[] = {0, 7, 6, 5, 4, 3, 2, 1};
-
-    for(int TK_IDX = 0; TK_IDX < 3; ++TK_IDX)
+    //updating TK2
     {
+        const int TK_IDX = 1;
+        for(int i = 0; i < 8; ++i)
+        {
+            ubyte lsb = (result[i + TK_IDX * 16] >> 7) ^
+                (result[i + TK_IDX * 16] >> 5);
+            result[i + TK_IDX * 16] = 
+                (result[i + TK_IDX * 16] << 1) | lsb;
+        }
+    }
+   
+    // updating TK3
+    {
+        const int TK_IDX = 2;
+
         for(int i = 0; i < 8; ++i)
         {
             ubyte msb = (result[i + TK_IDX * 16]>>6 & 1) ^ 
                 (result[i + TK_IDX * 16] & 1);
-            result[i + TK_IDX * 16] = permuteBits(
-                result[i + TK_IDX * 16], bitPerm
-            );
-            result[i + TK_IDX * 16] = (result[i + TK_IDX * 16] & 0x7F) | (msb << 7);
+            result[i + TK_IDX * 16] = result[i + TK_IDX * 16] >> 1;
+            result[i + TK_IDX * 16] = (result[i + TK_IDX * 16] & 0x7F) 
+                | (msb << 7);
         }
     }
 
