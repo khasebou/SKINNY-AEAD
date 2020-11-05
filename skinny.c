@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "skinny.h"
+#include <assert.h>
 
 const ubyte sboxLookupTable[256] = {
 0x65 ,0x4c ,0x6a ,0x42 ,0x4b ,0x63 ,0x43 ,0x6b ,0x55 ,0x75 ,0x5a ,0x7a ,0x53 ,0x73 ,0x5b ,0x7b ,
@@ -87,11 +88,17 @@ ubyte* computeNextTweakey(ubyte *p)
 
     int bitPerm[] = {0, 7, 6, 5, 4, 3, 2, 1};
 
-    for(int i = 0; i < 16 * 2; ++i)
+    for(int TK_IDX = 0; TK_IDX < 3; ++TK_IDX)
     {
-        ubyte msb = (result[i]>>6 & 1) ^ (result[i] & 1);
-        result[i] = permuteBits(result[i], bitPerm);
-        result[i] = result[i] & msb << 7;
+        for(int i = 0; i < 8; ++i)
+        {
+            ubyte msb = (result[i + TK_IDX * 16]>>6 & 1) ^ 
+                (result[i + TK_IDX * 16] & 1);
+            result[i + TK_IDX * 16] = permuteBits(
+                result[i + TK_IDX * 16], bitPerm
+            );
+            result[i + TK_IDX * 16] = (result[i + TK_IDX * 16] & 0x7F) | (msb << 7);
+        }
     }
 
     return result;
@@ -103,15 +110,11 @@ ubyte* subCells(ubyte *x)
     ubyte* result = malloc(sizeof(ubyte) * length);
     for(int i = 0; i < length; ++i)
     {
-        result[i] = subCell(x[i]);
+        result[i] = sboxLookupTable[ x[i] ];
     }
     return result;
 }
 
-ubyte subCell(ubyte x)
-{
-    return sboxLookupTable[x];
-}
 
 ubyte permuteBits(ubyte x, int *perm)
 {
@@ -201,18 +204,19 @@ ubyte* mixColumns(ubyte* input)
         0, 1, 1, 0,
         1, 0, 1, 0
     };
-    memset(result, 0, sizeof(ubyte) * length);
 
     ubyte* rTemp = result;
     for(int i = 0; i < sideLen; ++i)
     {
         for(int j = 0; j < sideLen; ++j)
         {
+            unsigned int sum = 0;
             for(int k = 0; k < sideLen; ++k)
             {
-                *rTemp ^=  m[i * 4 + k] * input[k * 4 + j]; 
+                sum = sum ^  (m[i * 4 + k] * input[k * 4 + j]); 
             }
-            rTemp++;
+            assert(sum <= 0xFF);
+            *rTemp++ = (ubyte) sum;
         }
     }
 

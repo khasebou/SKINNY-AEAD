@@ -10,7 +10,7 @@ typedef unsigned char ubyte;
  */
 ubyte permuteBits(ubyte x, int *perm);
 ubyte* subCells(ubyte *x);
-ubyte subCell(ubyte x);
+
 
 typedef struct skinny
 {
