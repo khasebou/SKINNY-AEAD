@@ -153,14 +153,19 @@ ubyte* AddConstants(ubyte *x, int roundNumber)
 
 ubyte* AddRoundTweakey(ubyte* input, const ubyte* tweakey)
 {
-    const int length = 16;
-    ubyte* result = malloc(sizeof(ubyte) * length);
 
-    for(int i = 0; i < length / 2; ++i)
+    const int length = 16;
+    const int hLength = length / 2;
+    ubyte* result = malloc(sizeof(ubyte) * length);
+    //TODO: only copy necessary portion
+    memcpy(result, input, sizeof(ubyte) * length);
+
+    for(int i = 0; i < hLength; ++i)
     {
         result[i] = input[i] ^ tweakey[i] ^ 
             tweakey[i + 16] ^ tweakey[i + 32];
     }
+    
     return result;
 }
 
