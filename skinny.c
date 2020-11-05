@@ -92,7 +92,7 @@ ubyte* computeNextTweakey(ubyte *p)
         for(int i = 0; i < 8; ++i)
         {
             ubyte lsb = (result[i + TK_IDX * 16] >> 7) ^
-                (result[i + TK_IDX * 16] >> 5);
+                ((result[i + TK_IDX * 16] >> 5) & 0b1);
             result[i + TK_IDX * 16] = 
                 (result[i + TK_IDX * 16] << 1) | lsb;
         }
@@ -107,8 +107,7 @@ ubyte* computeNextTweakey(ubyte *p)
             ubyte msb = (result[i + TK_IDX * 16]>>6 & 1) ^ 
                 (result[i + TK_IDX * 16] & 1);
             result[i + TK_IDX * 16] = result[i + TK_IDX * 16] >> 1;
-            result[i + TK_IDX * 16] = (result[i + TK_IDX * 16] & 0x7F) 
-                | (msb << 7);
+            result[i + TK_IDX * 16] = (result[i + TK_IDX * 16] & 0x7F) | (msb << 7);
         }
     }
 
