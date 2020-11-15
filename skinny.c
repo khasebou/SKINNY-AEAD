@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "skinny.h"
-#include <assert.h>
 
 const ubyte sboxLookupTable[256] = {
 0x65 ,0x4c ,0x6a ,0x42 ,0x4b ,0x63 ,0x43 ,0x6b ,0x55 ,0x75 ,0x5a ,0x7a ,0x53 ,0x73 ,0x5b ,0x7b ,
@@ -27,179 +26,64 @@ const ubyte roundConstantsLookupTable[] = {
     0x01,0x03,0x07,0x0F,0x1F,0x3E,0x3D,0x3B,0x37,0x2F,0x1E,0x3C,0x39,0x33,0x27,0x0E,
     0x1D,0x3A,0x35,0x2B,0x16,0x2C,0x18,0x30,0x21,0x02,0x05,0x0B,0x17,0x2E,0x1C,0x38,
     0x31,0x23,0x06,0x0D,0x1B,0x36,0x2D,0x1A,0x34,0x29,0x12,0x24,0x08,0x11,0x22,0x04,
-    0x09,0x13,0x26,0x0C,0x19,0x32,0x25,0x0A,0x15,0x2A,0x14,0x28,0x10,20,
+    0x09,0x13,0x26,0x0C,0x19,0x32,0x25,0x0A,
 };
 
 /**
  * SKINNY-128-384 block cipher encryption.
  * Under 48-byte tweakey at k, encrypt 16-byte plaintext at p and store the 16-byte output at c.
  */
-void skinny(unsigned char *c, const unsigned char *p, const unsigned char *k) {
-    const int rounds = 56;
-
-    ubyte* input = (ubyte*) malloc(sizeof(ubyte) * 16);
-    ubyte* key = (ubyte*) malloc(sizeof(ubyte) * 48);
-
-    memcpy(input, p, sizeof(ubyte) * 16);
-    memcpy(key, k, sizeof(ubyte) * 48);
-
-    for(int i = 0; i < rounds; ++i)
-    {
-        ubyte* subCellOut = subCells(input);
-        ubyte* addConstsOut = AddConstants(subCellOut, i);
-        ubyte* addRoundTwekOut = AddRoundTweakey(addConstsOut, k);
-        ubyte* shiftRowOut = shiftRows(addRoundTwekOut);
-        ubyte* mixColumnsOut = mixColumns(shiftRowOut);
-
-        ubyte* nextTweakeyOut = computeNextTweakey(key);
-
-        memcpy(input, mixColumnsOut, sizeof(ubyte) * 16);
-        memcpy(key, nextTweakeyOut, sizeof(ubyte) * 48);
-
-        free(subCellOut);
-        free(addConstsOut);
-        free(addRoundTwekOut);
-        free(shiftRowOut);
-        free(mixColumnsOut);
-        free(nextTweakeyOut);
-    }
-
-    memcpy(c, input, sizeof(ubyte) * 16);
-    free(input);
-    free(key);
-}
-
-ubyte* computeNextTweakey(ubyte *p)
+void skinny(unsigned char *c, const unsigned char *p, const unsigned char *k)
 {
-    int perm[] = {9, 15, 8, 13, 10, 14, 12, 11, 0, 
-            1, 2, 3, 4, 5, 6, 7};
-    ubyte* result = malloc(sizeof(ubyte) * 48);
+    ubyte* keys = generateRoundKeys(k);
+    memcpy(c, p, sizeof(ubyte) * 16);
 
-    for(int j = 0; j < 3; ++j)
+    // if(counter == 1){
+    //     for(int i = 0; i < 56 * 16; ++i)
+    //     {
+    //         printf("%d", (int) keys[i]);
+    //     }
+    //     printf("\n");
+    // }
+    
+    for(int i = 0; i < 56; ++i)
     {
-        ubyte* permOut = permuteNumbers(p + j * 16, perm, 16);
-        memcpy(result + j * 16, permOut, sizeof(ubyte) * 16);
-        free(permOut);
+        subCells(c);
+        addTweakey(c, keys + 16 * i);
+        shiftRows(c);
+        mixColumns(c);
     }
 
-    //updating TK2
-    {
-        const int TK_IDX = 1;
-        for(int i = 0; i < 8; ++i)
-        {
-            ubyte lsb = (result[i + TK_IDX * 16] >> 7) ^
-                ((result[i + TK_IDX * 16] >> 5) & 0b1);
-            result[i + TK_IDX * 16] = 
-                (result[i + TK_IDX * 16] << 1) | lsb;
-        }
-    }
-   
-    // updating TK3
-    {
-        const int TK_IDX = 2;
-
-        for(int i = 0; i < 8; ++i)
-        {
-            ubyte msb = (result[i + TK_IDX * 16]>>6 & 1) ^ 
-                (result[i + TK_IDX * 16] & 1);
-            result[i + TK_IDX * 16] = result[i + TK_IDX * 16] >> 1;
-            result[i + TK_IDX * 16] = (result[i + TK_IDX * 16] & 0x7F) | (msb << 7);
-        }
-    }
-
-    return result;
+    free(keys);
 }
 
-ubyte* subCells(ubyte *x)
+
+void subCells(ubyte *x)
 {
     const int length = 16;
-    ubyte* result = malloc(sizeof(ubyte) * length);
     for(int i = 0; i < length; ++i)
     {
-        result[i] = sboxLookupTable[ x[i] ];
+        x[i] = sboxLookupTable[ x[i] ];
     }
-    return result;
 }
 
-
-ubyte permuteBits(ubyte x, int *perm)
+void addTweakey(ubyte* state, ubyte* tweakey)
 {
-    ubyte result = 0;
-    for(int i = 0; i < 8; ++i)
+    for(int i = 0; i < 16; ++i)
     {
-        ubyte bitVal = 1 & (x >> perm[i]);
-        result |= (bitVal << (7 - i));
+        state[i] ^= tweakey[i];
     }
-    return result;
 }
 
-RoundConstants generateLFSRConstants(int roundNumber)
-{
-    ubyte state = roundConstantsLookupTable[roundNumber];
-    RoundConstants result;
-    
-    result.c2 = 0x2;
-    result.c0 = state & 0xF;
-    result.c1 = (state >> 4) & 0x3;
-
-    return result;
-}
-
-ubyte* AddConstants(ubyte *x, int roundNumber)
-{
-    const int length = 16;
-
-    RoundConstants consts = generateLFSRConstants(roundNumber);
-    ubyte* result = malloc(sizeof(ubyte) * length);
-
-    memcpy(result, x, sizeof(ubyte) * length);
-    result[0] ^= consts.c0;
-    result[4] ^= consts.c1;
-    result[8] ^= consts.c2;
-
-    return result;
-}
-
-ubyte* AddRoundTweakey(ubyte* input, const ubyte* tweakey)
-{
-
-    const int length = 16;
-    const int hLength = length / 2;
-    ubyte* result = malloc(sizeof(ubyte) * length);
-    //TODO: only copy necessary portion
-    memcpy(result, input, sizeof(ubyte) * length);
-
-    for(int i = 0; i < hLength; ++i)
-    {
-        result[i] = input[i] ^ tweakey[i] ^ 
-            tweakey[i + 16] ^ tweakey[i + 32];
-    }
-    
-    return result;
-}
-
-ubyte* permuteNumbers(ubyte* input, int *perm, int length)
-{
-    ubyte* result = malloc(sizeof(ubyte) * length);
-
-    for(int i = 0; i < length; ++i)
-    {
-        result[i] = input[perm[i]];
-    }
-
-    return result;
-}
-
-ubyte* shiftRows(ubyte* input)
+void shiftRows(ubyte* input)
 {
     int rowLength = 16;
     int perm[] = {0, 1, 2, 3, 7, 4, 5, 6, 10, 11, 
         8, 9, 13, 14, 15, 12};
-    ubyte* result = permuteNumbers(input, perm, rowLength);
-    return result;
+    permuteNumbers(input, perm, rowLength);
 }
 
-ubyte* mixColumns(ubyte* input)
+void mixColumns(ubyte* input)
 {
     const int length = 16;
     const int sideLen = 4;
@@ -221,10 +105,66 @@ ubyte* mixColumns(ubyte* input)
             {
                 sum = sum ^  (m[i * 4 + k] * input[k * 4 + j]); 
             }
-            assert(sum <= 0xFF);
             *rTemp++ = (ubyte) sum;
         }
     }
 
-    return result;
+    memcpy(input, result, sizeof(ubyte) * length);
+    free(result);
 }
+
+void permuteNumbers(ubyte* input, int *perm, int length)
+{
+    ubyte* result = malloc(sizeof(ubyte) * length);
+
+    for(int i = 0; i < length; ++i)
+    {
+        result[i] = input[perm[i]];
+    }
+
+    memcpy(input, result, sizeof(ubyte) * length);
+    free(result);
+}
+
+ubyte* generateRoundKeys(const ubyte* tweakey)
+{
+    const int stateLength = 48;
+    const int numRounds = 56;
+    ubyte* roundKeys = malloc(sizeof(ubyte) * 16 * numRounds);
+    ubyte* state = malloc(sizeof(ubyte) * stateLength);
+
+    memcpy(state, tweakey, sizeof(ubyte) * stateLength);
+
+    for(int r = 0; r < numRounds; ++r)
+    {
+        for(int i = 0; i < 8; ++i){
+            int kidx = 16 * r + i;
+            roundKeys[kidx] = state[i] ^ state[i + 16] ^ state[i + 32];
+        }
+    
+        roundKeys[16 * r] ^= roundConstantsLookupTable[r] & 0xf;
+        roundKeys[16 * r + 4] ^= (roundConstantsLookupTable[r] >> 4) & 0xf;
+        roundKeys[16 * r + 8] ^= 0x2;
+
+        int keyPermutation[] = {9, 15, 8, 13, 10, 14, 12, 11, 0, 1, 2, 3, 4, 5, 6, 7};
+        for(int i = 0; i < 3; ++i)
+        {
+            permuteNumbers(state + i * 16, keyPermutation, 16);
+        }
+
+        for(int i = 0; i < 8; ++i)
+        {
+            ubyte *byte = state + 16 + i;
+            //TK2 calc
+            *byte = ((*byte << 1) & 0xFE) ^ ((*byte >> 7) & 0x1) ^ ((*byte >> 5) & 0x1);
+            //TK3 calc
+            byte = state + 32 + i;
+            *byte = ((*byte >> 1) & 0x7F) ^ ((*byte << 7) & 0x80) ^ ((*byte << 1) & 0x80);
+        }
+    }
+
+    free(state);
+
+    return roundKeys;
+}
+

@@ -8,19 +8,10 @@ typedef unsigned char ubyte;
 
 /** perm assumes x is organized (x7,..., x0)
  */
-ubyte permuteBits(ubyte x, int *perm);
-ubyte* subCells(ubyte *x);
+void subCells(ubyte *x);
 
-
-typedef struct skinny
-{
-    int c0, c1, c2;
-} RoundConstants;
-
-ubyte* AddConstants(ubyte *x, int roundNumber);
-RoundConstants generateLFSRConstants(int roundNumber);
-
-ubyte* AddRoundTweakey(ubyte* input, const ubyte* tweakey);
+ubyte* generateRoundKeys(const ubyte* tweakey);
+void addTweakey(ubyte* state, ubyte* tweakey);
 /**
  * @param input Input array to permute elements
  * @param perm array of indicies for permutation
@@ -28,16 +19,11 @@ ubyte* AddRoundTweakey(ubyte* input, const ubyte* tweakey);
  * this func assumes element numbering as following 
  * (0,....,  length - 1)
  */
-ubyte* permuteNumbers(ubyte* input, int *perm, int length);
-/**  derives next tweakey from current one
- */
-//ubyte* createNextTweakKeyRow(ubyte* key);
+void permuteNumbers(ubyte* input, int *perm, int length);
 
-ubyte* computeNextTweakey(ubyte *key);
+void shiftRows(ubyte* input);
 
-ubyte* shiftRows(ubyte* input);
-
-ubyte* mixColumns(ubyte* input);
+void mixColumns(ubyte* input);
 /**
  * SKINNY-128-384 block cipher encryption.
  * Under 48-byte tweakey at k, encrypt 16-byte plaintext at p and store the 16-byte output at c.
