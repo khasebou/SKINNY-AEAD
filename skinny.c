@@ -37,14 +37,6 @@ void skinny(unsigned char *c, const unsigned char *p, const unsigned char *k)
 {
     ubyte* keys = generateRoundKeys(k);
     memcpy(c, p, sizeof(ubyte) * 16);
-
-    // if(counter == 1){
-    //     for(int i = 0; i < 56 * 16; ++i)
-    //     {
-    //         printf("%d", (int) keys[i]);
-    //     }
-    //     printf("\n");
-    // }
     
     for(int i = 0; i < 56; ++i)
     {
@@ -54,7 +46,7 @@ void skinny(unsigned char *c, const unsigned char *p, const unsigned char *k)
         mixColumns(c);
     }
 
-    free(keys);
+    //free((void*) keys);
 }
 
 
