@@ -46,7 +46,7 @@ void skinny(unsigned char *c, const unsigned char *p, const unsigned char *k)
         mixColumns(c);
     }
 
-    //free((void*) keys);
+    free((void*) keys);
 }
 
 
@@ -125,6 +125,7 @@ ubyte* generateRoundKeys(const ubyte* tweakey)
     ubyte* roundKeys = malloc(sizeof(ubyte) * 16 * numRounds);
     ubyte* state = malloc(sizeof(ubyte) * stateLength);
 
+    memset(roundKeys, 0, sizeof(ubyte) * 16 * numRounds);
     memcpy(state, tweakey, sizeof(ubyte) * stateLength);
 
     for(int r = 0; r < numRounds; ++r)
